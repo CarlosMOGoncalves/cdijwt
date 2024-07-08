@@ -1,0 +1,226 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>pt.cmg.test</groupId>
+    <artifactId>cdijwt</artifactId>
+    <version>1.0.0</version>
+
+    <name>cdijwt</name>
+    <packaging>war</packaging>
+
+    <developers>
+        <developer>
+            <id>1</id>
+            <name>Carlos Gonçalves</name>
+            <email>carlosmoliveiragoncalves@gmail.com</email>
+            <roles>
+                <role>architect</role>
+                <role>developer</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <repositories>
+        <repository>
+            <id>payara-nexus-artifacts</id>
+            <name>Payara Nexus Artifacts</name>
+            <url>https://nexus.payara.fish/repository/payara-artifacts</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+    
+
+    <properties>
+        <!--  General properties -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Application properties -->
+        <final.name>${project.artifactId}</final.name>
+
+        <!--JAVA version -->
+        <java-version>21</java-version>
+
+        <!-- Payara Version -->
+        <payara-version>6.2024.6</payara-version>
+        <payara-micro-plugin-version>2.3</payara-micro-plugin-version>
+
+        <!-- Maven plugin versions -->
+        <maven-required-version>3.9.7</maven-required-version>
+       
+        <clean-plugin-version>3.3.2</clean-plugin-version>
+        <compiler-plugin-version>3.13.0</compiler-plugin-version>
+        <enforcer-plugin-version>3.5.0</enforcer-plugin-version>
+        <war-plugin-version>3.4.0</war-plugin-version>
+
+    </properties>
+
+    <build>
+
+        <pluginManagement>
+            <plugins>
+
+                <!-- Maven Clean  Plugin , used to clean up after build -->
+                <plugin>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${clean-plugin-version}</version>
+                </plugin>
+
+                <!-- Maven Compiler Plugin , for JARs -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${compiler-plugin-version}</version>
+                    <configuration>
+                        <release>${java-version}</release>
+                        <encoding>${project.build.sourceEncoding}</encoding>
+                    </configuration>
+                </plugin>
+
+
+                <!-- Maven WAR Plugin, for WARs -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-war-plugin</artifactId>
+                    <version>${war-plugin-version}</version>
+                    <configuration>
+                        <!-- Since we are using Servlet 3+ we do not need web.xml to register JAX-RS webservices so the war plugin must not fail if it doesn't find it -->
+                        <failOnMissingWebXml>false</failOnMissingWebXml>
+                        <attachClasses>true</attachClasses>
+                        <classesClassifier>classes</classesClassifier>
+                        <archive>
+                            <addMavenDescriptor>false</addMavenDescriptor>
+                        </archive>
+                    </configuration>
+                </plugin>
+
+
+                <!-- Useful for the Versions plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>${enforcer-plugin-version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>fish.payara.maven.plugins</groupId>
+                    <artifactId>payara-micro-maven-plugin</artifactId>
+                    <version>${payara-micro-plugin-version}</version>
+                    <configuration>
+                        <javaCommandLineOptions>
+                            <option>
+                                <value>-Xms256m</value>
+                            </option>
+                            <option>
+                                <value>-Xmx256m</value>
+                            </option>
+                        </javaCommandLineOptions>
+                    </configuration>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+
+            <!-- Useful for the Versions plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-maven</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>${maven-required-version}</version>
+                                    <message>Minimum Maven needed version is ${maven-required-version}</message>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>${java-version}</version>
+                                    <message>Minimum JDK needed version is ${java-version}</message>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Payara Micro bundle execution will configure the Uber JAR -->
+            <plugin>
+                <groupId>fish.payara.maven.plugins</groupId>
+                <artifactId>payara-micro-maven-plugin</artifactId>
+
+                <executions>
+                    <execution>
+                        <id>BUNDLE</id>
+                        <goals>
+                            <goal>bundle</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <payaraVersion>${payara-version}</payaraVersion>
+                            <!-- Uncomment below to name the context root path from ROOT to whatever I want -->
+                            <!--autoDeployContextRoot>${project.artifactId}</autoDeployContextRoot-->
+                            <systemProperties>
+                                <property>
+                                    <name>payaramicro.port</name>
+                                    <value>30000</value>
+                                </property>
+                                <property>
+                                    <name>payaramicro.minHttpThreads</name>
+                                    <value>10</value>
+                                </property>
+                                <property>
+                                    <name>payaramicro.maxHttpThreads</name>
+                                    <value>10</value>
+                                </property>
+                            </systemProperties>
+                            <appendSystemProperties>true</appendSystemProperties>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
+    </build>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>fish.payara.api</groupId>
+                <artifactId>payara-bom</artifactId>
+                <version>${payara-version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+    
+        <!-- Platform -->
+        <dependency>
+            <groupId>jakarta.platform</groupId>
+            <artifactId>jakarta.jakartaee-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile</groupId>
+            <artifactId>microprofile</artifactId>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+
+    </dependencies>
+
+</project>
